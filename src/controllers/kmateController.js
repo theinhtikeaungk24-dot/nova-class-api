@@ -77,4 +77,79 @@ const checkQuiz = async (req, res) => {
     }
 };
 
-module.exports = { ask, getHistory, generateQuiz, checkQuiz };
+// ---- Full Exam: Generate ----
+const generateExam = async (req, res) => {
+    const { sections = [] } = req.body;
+    try {
+        const aiRes = await axios.post(`${AI_SERVICE}/exam/generate`, { sections });
+        res.json(aiRes.data);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: "Exam generation error", error: err.message });
+    }
+};
+
+// ---- Full Exam: Check ----
+const checkExam = async (req, res) => {
+    const { sections, language = "English" } = req.body;
+    const userId = req.user.id;
+    try {
+        const aiRes = await axios.post(`${AI_SERVICE}/exam/check`, { sections, language });
+        const { overall } = aiRes.data;
+
+        await db.query(
+            "INSERT INTO quiz_results (user_id, score, total_questions, created_at) VALUES (?, ?, ?, NOW())",
+            [userId, overall.score, overall.total]
+        ).catch(() => {});
+
+        res.json(aiRes.data);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: "Exam check error", error: err.message });
+    }
+};
+
+// ---- Real Exam Papers: List ----
+const listRealExams = async (req, res) => {
+    try {
+        const aiRes = await axios.get(`${AI_SERVICE}/exam/real/list`);
+        res.json(aiRes.data);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: "Real exam list error", error: err.message });
+    }
+};
+
+// ---- Real Exam Papers: Generate ----
+const generateRealExam = async (req, res) => {
+    const { exam_no, sections = [] } = req.body;
+    try {
+        const aiRes = await axios.post(`${AI_SERVICE}/exam/real/generate`, { exam_no, sections });
+        res.json(aiRes.data);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: "Real exam generation error", error: err.message });
+    }
+};
+
+// ---- Real Exam Papers: Check ----
+const checkRealExam = async (req, res) => {
+    const { exam_no, sections, language = "English" } = req.body;
+    const userId = req.user.id;
+    try {
+        const aiRes = await axios.post(`${AI_SERVICE}/exam/real/check`, { exam_no, sections, language });
+        const { overall } = aiRes.data;
+
+        await db.query(
+            "INSERT INTO quiz_results (user_id, score, total_questions, created_at) VALUES (?, ?, ?, NOW())",
+            [userId, overall.score, overall.total]
+        ).catch(() => {});
+
+        res.json(aiRes.data);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: "Real exam check error", error: err.message });
+    }
+};
+
+module.exports = { ask, getHistory, generateQuiz, checkQuiz, generateExam, checkExam, listRealExams, generateRealExam, checkRealExam };

@@ -6,6 +6,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use("/audio", express.static("public/audio"));
 
 // Routes
 app.use("/api/auth",     require("./src/routes/auth"));
